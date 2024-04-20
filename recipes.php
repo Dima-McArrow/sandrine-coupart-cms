@@ -10,7 +10,7 @@ use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
 // Only load Dotenv if running locally and .env file exists
-if (file_exists(__DIR__ . '/.env')) {
+if (file_exists(__DIR__ . '/app_configs/.env')) {
   $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/app_configs');
   $dotenv->load();
 }
@@ -87,10 +87,21 @@ try {
 // Function to upload multiple images to S3
 function uploadImagesToS3($images)
 {
-  // Fetch S3 credentials from environment variables set in Heroku
-  $s3Region = getenv('S3_REGION');
-  $s3Key = getenv('S3_KEY');
-  $s3Secret = getenv('S3_SECRET');
+  // Check if S3 credentials are set in environment variables (common in Heroku)
+  if (getenv('S3_REGION') && getenv('S3_KEY') && getenv('S3_SECRET')) {
+    $s3Region = getenv('S3_REGION');
+    $s3Key = getenv('S3_KEY');
+    $s3Secret = getenv('S3_SECRET');
+  } else {
+    // Load S3 credentials from .env file if not set in environment (local development)
+    if (file_exists(__DIR__ . '/app_configs/.env')) {
+      $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/app_configs');
+      $dotenv->load();
+    }
+    $s3Region = $_ENV['S3_REGION'];
+    $s3Key = $_ENV['S3_KEY'];
+    $s3Secret = $_ENV['S3_SECRET'];
+  }
 
   $s3 = new S3Client([
     'version' => 'latest',
@@ -290,13 +301,17 @@ function getAllergensByRecipe($pdo, $recipeId)
     <h2 class="mt-5">Recettes</h2>
     <div class="container d-flex gap-3">
       <?php foreach ($recipes as $recipe): ?>
-        <div class="card mt-3 mb-5" style="width: 22rem;">
+        <div class="card mt-3 mb-5" style="width: 18rem;">
+          <?php if ($recipe['image_url']): ?>
+            <img class="card-img-top img-fluid" src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top" style="width: 300px;"
+              alt="Recipe Image">
+          <?php endif; ?>
           <div class="card-body">
             <h3 class="card-title"><?= htmlspecialchars($recipe['title']) ?></h3>
             <p class="card-text"><?= htmlspecialchars($recipe['description']) ?></p>
-            <p class="card-text">Temps de préparation (mins) : <?= intval($recipe['prep_time']) ?> mins</p>
-            <p class="card-text">Temps de repos (mins) : <?= intval($recipe['rest_time']) ?> mins</p>
-            <p class="card-text">Temps de cuisson (mins) : <?= intval($recipe['cook_time']) ?> mins</p>
+            <p class="card-text">Temps de préparation : <?= intval($recipe['prep_time']) ?> mins</p>
+            <p class="card-text">Temps de repos : <?= intval($recipe['rest_time']) ?> mins</p>
+            <p class="card-text">Temps de cuisson : <?= intval($recipe['cook_time']) ?> mins</p>
             <h5>Ingrédients</h5>
             <ul>
               <?php $ingredients = getIngredientsByRecipe($pdo, $recipe['id']); ?>
@@ -317,10 +332,6 @@ function getAllergensByRecipe($pdo, $recipeId)
                 <?php endforeach; ?>
               <?php endif; ?>
             </ol>
-            <?php if ($recipe['image_url']): ?>
-              <img src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top" style="width: 300px;"
-                alt="Recipe Image">
-            <?php endif; ?>
             <h5 class="mt-3">Diet Types</h5>
             <ul>
               <?php $dietTypes = getDietTypesByRecipe($pdo, $recipe['id']); ?>
