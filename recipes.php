@@ -367,16 +367,16 @@ function getAllergensByRecipe($pdo, $recipeId)
       const inputGroup = document.createElement('div');
       inputGroup.className = 'input-group mb-3';
       inputGroup.innerHTML = `
-                <input type="text" class="form-control" name="ingredients[${ingredientIndex}][name]" placeholder="Ingredient Name" required>
-                <input type="number" class="form-control" name="ingredients[${ingredientIndex}][quantity]" placeholder="Quantity" required>
+                <input type="text" class="form-control" name="ingredients[${ingredientIndex}][name]" placeholder="Nom de l'ingrédient" required>
+                <input type="number" class="form-control" name="ingredients[${ingredientIndex}][quantity]" placeholder="Quantité" required>
                 <select class="form-select" name="ingredients[${ingredientIndex}][measure_type]" required>
-                    <option value="unit">Unit</option>
-                    <option value="g">Grams</option>
-                    <option value="kg">Kilograms</option>
-                    <option value="ml">Milliliters</option>
-                    <option value="l">Liters</option>
+                    <option value="unit">Unité</option>
+                    <option value="g">Grammes</option>
+                    <option value="kg">Kilogrammes</option>
+                    <option value="ml">Millilitres</option>
+                    <option value="l">Litres</option>
                 </select>
-                <button type="button" class="btn btn-danger" onclick="removeElement(this)">Remove</button>
+                <button type="button" class="btn btn-danger" onclick="removeElement(this)">Retirer</button>
             `;
       container.appendChild(inputGroup);
       ingredientIndex++;
@@ -388,9 +388,9 @@ function getAllergensByRecipe($pdo, $recipeId)
       const inputGroup = document.createElement('div');
       inputGroup.className = 'input-group mb-3';
       inputGroup.innerHTML = `
-                <input type="number" class="form-control mb-2" name="steps[${stepIndex}][step_number]" placeholder="Step Number" required>
-                <input type="text" class="form-control mb-2" name="steps[${stepIndex}][instruction]" placeholder="Step Description" required>
-                <button type="button" class="btn btn-danger" onclick="removeElement(this)">Remove</button>
+                <input type="number" class="form-control mb-2" name="steps[${stepIndex}][step_number]" placeholder="Numéro d'étape" required>
+                <input type="text" class="form-control mb-2" name="steps[${stepIndex}][instruction]" placeholder="Description de l'étape" required>
+                <button type="button" class="btn btn-danger" onclick="removeElement(this)">Retirer</button>
             `;
       container.appendChild(inputGroup);
       stepIndex++; // Increment index for each new step
