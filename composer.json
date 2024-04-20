@@ -1,0 +1,19 @@
+{
+  "name": "dima/sandrine-coupart-cms",
+  "type": "project",
+  "require": {
+    "aws/aws-sdk-php": "^3.304",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Dima\\SandrineCoupartCms\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Dima-McArrow",
+      "email": "dsm.box@gmail.com"
+    }
+  ]
+}
