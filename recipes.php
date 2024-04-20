@@ -9,8 +9,11 @@ require './app_configs/db_config.php'; // Adjust the path as needed
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/app_configs');
-$dotenv->load();
+// Only load Dotenv if running locally and .env file exists
+if (file_exists(__DIR__ . '/.env')) {
+  $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/app_configs');
+  $dotenv->load();
+}
 
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
@@ -84,10 +87,12 @@ try {
 // Function to upload multiple images to S3
 function uploadImagesToS3($images)
 {
-  // Initialize S3 client
-  $s3Region = $_ENV['region'];
-  $s3Key = $_ENV['IAM_KEY'];
-  $s3Secret = $_ENV['IAM_SECRET'];
+  // Fetch S3 credentials from environment variables set in Heroku
+  $s3Region = getenv('S3_REGION');
+  $s3Key = getenv('S3_KEY');
+  $s3Secret = getenv('S3_SECRET');
+  $s3Bucket = getenv('S3_BUCKET');
+
   $s3 = new S3Client([
     'version' => 'latest',
     'region' => $s3Region,
@@ -102,7 +107,7 @@ function uploadImagesToS3($images)
     $key = 'recipes/' . $name;
     try {
       $result = $s3->putObject([
-        'Bucket' => 'sandrine-coupart-site',
+        'Bucket' => $s3Bucket,
         'Key' => $key,
         'SourceFile' => $images['tmp_name'][$index],
         'ACL' => 'public-read'
@@ -114,6 +119,7 @@ function uploadImagesToS3($images)
   }
   return $urls;
 }
+
 
 // Function to handle insertion of ingredients, steps, diet types, allergens
 function handleIngredients($pdo, $recipeId, $ingredients)
@@ -279,8 +285,8 @@ function getAllergensByRecipe($pdo, $recipeId)
       </div>
       <button type="submit" class="btn btn-primary">Ajouter la recette</button>
       <div class="row mt-5 mb-3">
-      <a href="dashboard.php" class="btn btn-secondary">Retour</a>
-    </div>
+        <a href="dashboard.php" class="btn btn-secondary">Retour</a>
+      </div>
     </form>
     <h2 class="mt-5">Recettes</h2>
     <div class="container d-flex gap-3">
@@ -313,7 +319,8 @@ function getAllergensByRecipe($pdo, $recipeId)
               <?php endif; ?>
             </ol>
             <?php if ($recipe['image_url']): ?>
-              <img src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top" style="width: 300px;" alt="Recipe Image">
+              <img src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top" style="width: 300px;"
+                alt="Recipe Image">
             <?php endif; ?>
             <h5 class="mt-3">Diet Types</h5>
             <ul>
