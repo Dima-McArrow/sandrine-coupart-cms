@@ -91,7 +91,6 @@ function uploadImagesToS3($images)
   $s3Region = getenv('S3_REGION');
   $s3Key = getenv('S3_KEY');
   $s3Secret = getenv('S3_SECRET');
-  $s3Bucket = getenv('S3_BUCKET');
 
   $s3 = new S3Client([
     'version' => 'latest',
@@ -107,7 +106,7 @@ function uploadImagesToS3($images)
     $key = 'recipes/' . $name;
     try {
       $result = $s3->putObject([
-        'Bucket' => $s3Bucket,
+        'Bucket' => 'sandrine-coupart-site',
         'Key' => $key,
         'SourceFile' => $images['tmp_name'][$index],
         'ACL' => 'public-read'
