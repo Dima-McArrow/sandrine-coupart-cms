@@ -36,7 +36,8 @@ $user = $_SESSION['user']; // Obtenir les données de session utilisateur
         <a href="manage_diet_types.php" class="list-group-item list-group-item-action">Gestion des types de régime</a>
         <a href="recipes.php" class="list-group-item list-group-item-action">Gestion des recettes</a>
         <a href="messages.php" class="list-group-item list-group-item-action">Gestion des messages</a>
-
+        <a href="testim_manage.php" class="list-group-item list-group-item-action">Gestion des témoignages</a>
+        <a href="reviews_manage.php" class="list-group-item list-group-item-action">Gestion des avis</a>
       <?php endif; ?>
     </div>
     <a href="logout.php" class="btn btn-danger mt-3">Logout</a>
