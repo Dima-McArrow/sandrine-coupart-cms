@@ -9,6 +9,30 @@ require './app_configs/db_config.php'; // Adjust the path as needed
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
+
+// Custom function for handling upload errors
+function file_upload_error_message($error_code)
+{
+  switch ($error_code) {
+    case UPLOAD_ERR_INI_SIZE:
+      return 'The uploaded file exceeds the upload_max_filesize directive in php.ini';
+    case UPLOAD_ERR_FORM_SIZE:
+      return 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form';
+    case UPLOAD_ERR_PARTIAL:
+      return 'The uploaded file was only partially uploaded';
+    case UPLOAD_ERR_NO_FILE:
+      return 'No file was uploaded';
+    case UPLOAD_ERR_NO_TMP_DIR:
+      return 'Missing a temporary folder';
+    case UPLOAD_ERR_CANT_WRITE:
+      return 'Failed to write file to disk';
+    case UPLOAD_ERR_EXTENSION:
+      return 'File upload stopped by extension';
+    default:
+      return 'Unknown upload error';
+  }
+}
+
 // Only load Dotenv if running locally and .env file exists
 if (file_exists(__DIR__ . '/app_configs/.env')) {
   $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/app_configs');
@@ -30,11 +54,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $pdo->beginTransaction();
 
       // Upload images to S3
-      $imageUrls = uploadImagesToS3($_FILES['images']);
 
-      // Insert recipe into database
+      $imageUrl = null; // Default to null if no image is uploaded
+      if (isset($_FILES['image'])) {
+        if ($_FILES['image']['error'] === UPLOAD_ERR_OK) {
+          // Proceed with S3 upload
+          $uploadResult = uploadImageToS3($_FILES['image']);
+          if ($uploadResult) {
+            $imageUrl = $uploadResult;
+          } else {
+            $message .= ' Image upload failed.';
+          }
+        } else {
+          // Use the custom function to get a human-readable error message
+          $message .= ' Upload error: ' . file_upload_error_message($_FILES['image']['error']);
+        }
+      } else {
+        $message .= ' No image uploaded.';
+      }
+
+      // Correct variable used when inserting into the database
       $stmt = $pdo->prepare("INSERT INTO Recipes (title, description, prep_time, rest_time, cook_time, image_url) VALUES (?, ?, ?, ?, ?, ?)");
-      $stmt->execute([$_POST['title'], $_POST['description'], $_POST['prep_time'], $_POST['rest_time'], $_POST['cook_time'], $imageUrls[0] ?? null]);
+      $stmt->execute([$_POST['title'], $_POST['description'], $_POST['prep_time'], $_POST['rest_time'], $_POST['cook_time'], $imageUrl]);
+
       $recipeId = $pdo->lastInsertId();
 
       // Handle Ingredients, Steps, Diet Types, and Allergens
@@ -85,7 +127,7 @@ try {
 }
 
 // Function to upload multiple images to S3
-function uploadImagesToS3($images)
+function uploadImageToS3($image)
 {
   // Check if S3 credentials are set in environment variables (common in Heroku)
   if (getenv('S3_REGION') && getenv('S3_KEY') && getenv('S3_SECRET')) {
@@ -112,22 +154,19 @@ function uploadImagesToS3($images)
     ],
   ]);
 
-  $urls = [];
-  foreach ($images['name'] as $index => $name) {
-    $key = 'recipes/' . $name;
-    try {
-      $result = $s3->putObject([
-        'Bucket' => 'sandrine-coupart-site',
-        'Key' => $key,
-        'SourceFile' => $images['tmp_name'][$index],
-        'ACL' => 'public-read'
-      ]);
-      $urls[] = $result->get('ObjectURL');
-    } catch (AwsException $e) {
-      // Handle possible errors here
-    }
+  $key = 'recipes/' . basename($image['name']);
+  try {
+    $result = $s3->putObject([
+      'Bucket' => 'sandrine-coupart-site',
+      'Key' => $key,
+      'SourceFile' => $image['tmp_name'],
+      'ACL' => 'public-read'
+    ]);
+    return $result->get('ObjectURL');
+  } catch (AwsException $e) {
+    // Log error or handle exception
+    return false;
   }
-  return $urls;
 }
 
 
@@ -261,7 +300,7 @@ function getAllergensByRecipe($pdo, $recipeId)
       </div>
       <div class="mb-3">
         <label for="images" class="form-label">Images :</label>
-        <input type="file" class="form-control" id="images" name="images[]" accept="image/*" multiple>
+        <input type="file" class="form-control" id="image" name="image" accept="image/*">
       </div>
       <div class="mb-3">
         <label for="ingredients" class="form-label">Ingrédients :</label>
@@ -299,12 +338,12 @@ function getAllergensByRecipe($pdo, $recipeId)
       </div>
     </form>
     <h2 class="mt-5">Recettes</h2>
-    <div class="container d-flex gap-3">
+    <div class="container d-flex flex-wrap gap-3">
       <?php foreach ($recipes as $recipe): ?>
         <div class="card mt-3 mb-5" style="width: 18rem;">
           <?php if ($recipe['image_url']): ?>
-            <img class="card-img-top img-fluid" src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top" style="width: 300px;"
-              alt="Recipe Image">
+            <img class="card-img-top img-fluid" src="<?= htmlspecialchars($recipe['image_url']) ?>" class="card-img-top"
+              style="width: 300px;" alt="Recipe Image">
           <?php endif; ?>
           <div class="card-body">
             <h3 class="card-title"><?= htmlspecialchars($recipe['title']) ?></h3>
