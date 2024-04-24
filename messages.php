@@ -6,6 +6,8 @@ error_reporting(E_ALL);
 require './vendor/autoload.php';
 require './app_configs/db_config.php'; // Adjust the path as needed
 
+$pdo; // Ensure that $pdo is defined and connected properly to your database
+
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
   exit();
@@ -13,19 +15,20 @@ if (!isset($_SESSION['user'])) {
 
 $message = '';
 
-// Handle form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['email']) && isset($_POST['message'])) {
-    // Add a new message
-    try {
-      // Insert message into database
-      $stmt = $pdo->prepare("INSERT INTO Messages (first_name, last_name, email, message) VALUES (?, ?, ?, ?)");
-      $stmt->execute([$_POST['first_name'], $_POST['last_name'], $_POST['email'], $_POST['message']]);
-      $message = "Message sent successfully!";
-    } catch (PDOException $e) {
-      $message = "Error sending message: " . $e->getMessage();
-    }
+// Handle Delete Request
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_id'])) {
+  $deleteId = $_POST['delete_id'];
+  try {
+    $stmt = $pdo->prepare("DELETE FROM Messages WHERE id = ?");
+    $stmt->execute([$deleteId]);
+    $message = "Message deleted successfully.";
+  } catch (PDOException $e) {
+    $message = "Error deleting message: " . $e->getMessage();
   }
+
+  // Optional: Redirect to avoid resubmission on page refresh
+  header("Location: " . $_SERVER['PHP_SELF']);
+  exit();
 }
 
 // Fetch all messages for display
@@ -39,7 +42,7 @@ try {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
   <meta charset="UTF-8">
@@ -51,43 +54,31 @@ try {
 <body>
   <div class="container">
     <h1 class="mt-5">Message Manager</h1>
-
-    <h2 class="mt-5">Send Message</h2>
-    <form method="post">
-      <div class="mb-3">
-        <label for="first_name" class="form-label">First Name:</label>
-        <input type="text" class="form-control" id="first_name" name="first_name" required>
-      </div>
-      <div class="mb-3">
-        <label for="last_name" class="form-label">Last Name:</label>
-        <input type="text" class="form-control" id="last_name" name="last_name" required>
-      </div>
-      <div class="mb-3">
-        <label for="email" class="form-label">Email:</label>
-        <input type="email" class="form-control" id="email" name="email" required>
-      </div>
-      <div class="mb-3">
-        <label for="message" class="form-label">Message:</label>
-        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
-      </div>
-      <button type="submit" class="btn btn-primary">Send Message</button>
-    </form>
-
     <?php if ($message): ?>
-      <p><?= $message ?></p>
+      <div class="alert alert-info"><?= $message ?></div>
     <?php endif; ?>
-
     <h2 class="mt-5">Messages</h2>
     <?php foreach ($messages as $message): ?>
-      <div class="card mt-3">
+      <div class="card mt-3 mb-5">
         <div class="card-body">
-          <h5 class="card-title"><?= $message['first_name'] ?>   <?= $message['last_name'] ?></h5>
-          <h6 class="card-subtitle mb-2 text-muted"><?= $message['email'] ?></h6>
-          <p class="card-text"><?= $message['message'] ?></p>
+          <h5 class="card-title"><?= htmlspecialchars($message['first_name']) ?>
+            <?= htmlspecialchars($message['last_name']) ?></h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            <a href="mailto:<?= htmlspecialchars($message['email']) ?>"><?= htmlspecialchars($message['email']) ?></a>
+          </h6>
+          <p class="card-text"><?= htmlspecialchars($message['message']) ?></p>
           <p class="card-text"><small class="text-muted"><?= $message['created_at'] ?></small></p>
+          <!-- Delete form -->
+          <form method="POST" action="" onsubmit="return confirm('Are you sure you want to delete this message?');">
+            <input type="hidden" name="delete_id" value="<?= $message['id'] ?>">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
         </div>
       </div>
     <?php endforeach; ?>
+    <div class="row mb-5">
+      <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
   </div>
 </body>
 
