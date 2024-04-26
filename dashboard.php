@@ -22,7 +22,6 @@ $user = $_SESSION['user']; // Obtenir les données de session utilisateur
 </head>
 <body>
   <div class="container mt-5">
-    <img class="main_logo mx-auto d-block mt-5 mb-5" style="width: 300px;" src="https://" alt="logo CMS" />
     <hr>
     <h1 class="mb-4">Bonjour <strong>
         <?php echo htmlspecialchars($user['name']); ?>

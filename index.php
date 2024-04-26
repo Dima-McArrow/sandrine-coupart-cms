@@ -42,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
-  <img class="main_logo mx-auto d-block mt-5" style="width: 300px;" src="https://" alt="logo CMS" />
   <div class="container text-center">
     <h1 class="mt-5 mb-5">Bienvenue sur le CMS du site web Sandrine Coupart</h1>
     <?php if (!empty($error)): ?>

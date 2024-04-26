@@ -77,7 +77,7 @@ try {
       </div>
     <?php endforeach; ?>
     <div class="row mb-5">
-      <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+      <a href="dashboard.php" class="btn btn-secondary">Retour</a>
     </div>
   </div>
 </body>
